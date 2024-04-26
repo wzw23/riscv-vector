@@ -59,6 +59,8 @@ class VUopCtrlW extends Bundle {
   val redu        = Bool()
   val mask        = Bool()
   val perm        = Bool()
+  val custom      = Bool()//wzw add
+  val lsrcVal     = Vec(3, Bool())//wzw add
   val floatRed    = Bool()
   val vGatherEi16EEW8  = Bool()
   val vGatherEi16EEW16 = Bool()
@@ -95,6 +97,7 @@ class Muop(implicit p : Parameters) extends Bundle {
     val scalar_opnd_1 = UInt(64.W)
     val scalar_opnd_2 = UInt(64.W)
     val uopRegInfo    = new UopRegInfo
+    val inst          = UInt(32.W)//wzw add
 }
 
 class ExcpInfo extends Bundle {
@@ -119,6 +122,7 @@ class Vsplit(implicit p : Parameters) extends Module {
         val scoreBoardSetIO = Flipped(new ScoreboardSetIO)
         val scoreBoardReadIO = Flipped(new ScoreboardReadIO)
         val lsuStallSplit = Input(Bool()) 
+        val customStallSplit = Input(Bool())//wzw add
         val iexNeedStall  = Input(Bool())
         val vLSUXcpt = Input (new VLSUXcpt)
         val excpInfo = Output(new ExcpInfo)
@@ -247,7 +251,7 @@ class Vsplit(implicit p : Parameters) extends Module {
     val vmaskExcp = vcpop || viota || vid
 
     val lsrc0_inc =             //vcompress
-          Mux(ctrl.redu || floatRed || (ctrl.funct6 === "b010111".U && ctrl.funct3 === 2.U) || vmaskExcp, 0.U, 
+          Mux(ctrl.custom|| ctrl.redu || floatRed || (ctrl.funct6 === "b010111".U && ctrl.funct3 === 2.U) || vmaskExcp, 0.U, 
           Mux(ctrl.widen || ctrl.widen2 || ctrl.narrow, idx >> 1, idx))
               
     val lsrc1_inc = Wire(UInt(3.W))
@@ -260,7 +264,7 @@ class Vsplit(implicit p : Parameters) extends Module {
       lsrc1_inc := idx >> 2
     }.elsewhen (v_ext_out && ctrl.lsrc(0)(2,1) === 1.U) {
       lsrc1_inc := idx >> 3
-    }.elsewhen (ctrl.funct6 === "b010100".U || vmaskExcp) { //VMUNARY0
+    }.elsewhen (ctrl.custom || ctrl.funct6 === "b010100".U || vmaskExcp) { //VMUNARY0
       lsrc1_inc := 0.U
     }.otherwise {
       lsrc1_inc := idx
@@ -274,7 +278,7 @@ class Vsplit(implicit p : Parameters) extends Module {
       ldest_inc := Mux(idxVdInc, idx >> indexIncBase, idx % emulVd)
     }.elsewhen(ctrl.narrow) {
       ldest_inc := idx >> 1
-    }.elsewhen (ctrl.redu  || floatRed || ctrl.narrow_to_1 || vcpop) {
+    }.elsewhen (ctrl.custom || ctrl.redu  || floatRed || ctrl.narrow_to_1 || vcpop) { //wzw add custom
       ldest_inc := 0.U
     }.otherwise {
       ldest_inc := idx
@@ -386,7 +390,7 @@ class Vsplit(implicit p : Parameters) extends Module {
 
     val narrowTo1NoStall = ctrl.narrow_to_1 
     needStall := hasRegConf(0) || hasRegConf(1) || hasRegConf(2) || hasRegConf(3) || 
-                 io.lsuStallSplit || io.iexNeedStall && ~narrowTo1NoStall ||
+                 io.lsuStallSplit || io.customStallSplit || io.iexNeedStall && ~narrowTo1NoStall ||
                  ctrl.illegal || io.vLSUXcpt.exception_vld
     
     val ldStEmulVd  = eewEmulInfo1.emulVd
@@ -418,6 +422,8 @@ class Vsplit(implicit p : Parameters) extends Module {
     io.out.mUop.bits.uop.ctrl.perm        := ctrl.perm
     io.out.mUop.bits.uop.ctrl.lsrc        := ctrl.lsrc
     io.out.mUop.bits.uop.ctrl.ldest       := ctrl.ldest
+    io.out.mUop.bits.uop.ctrl.custom      := ctrl.custom
+    io.out.mUop.bits.uop.ctrl.lsrcVal     := ctrl.lsrcVal
     io.out.mUop.bits.uop.ctrl.floatRed    := floatRed
     io.out.mUop.bits.uop.ctrl.vGatherEi16EEW8  := vGatherEi16EEW8
     io.out.mUop.bits.uop.ctrl.vGatherEi16EEW16 := vGatherEi16EEW16
@@ -436,6 +442,7 @@ class Vsplit(implicit p : Parameters) extends Module {
 
     io.out.mUop.bits.scalar_opnd_1        := scalar_float_opnd_1
     io.out.mUop.bits.scalar_opnd_2        := scalarOpnd2
+    io.out.mUop.bits.inst                 := io.in.decodeIn.bits.inst//wzw add
 
     io.out.mUop.bits.uopRegInfo.vxsat     := false.B          
     io.out.mUop.bits.uopRegInfo.vs1       := vs1
@@ -489,8 +496,9 @@ class Vsplit(implicit p : Parameters) extends Module {
     val vmv_vfmv    = ctrl.alu && !ctrl.opi && ctrl.funct6 === "b010000".U
 
     //val expdLenIn = Mux(ldst, expdLenLdSt, Mux(ctrl.perm || vmv_vfmv, 1.U , maxOfVs12Vd))
+    //wzw:add ctrl.custom
     expdLenIn := Mux(ldst, expdLenLdSt,
-                    Mux(ctrl.perm || vmv_vfmv, 1.U, (Mux(vcpop || viota || vid, lmul, maxOfVs12Vd))))
+                    Mux(ctrl.perm || vmv_vfmv || ctrl.custom, 1.U, (Mux(vcpop || viota || vid, lmul, maxOfVs12Vd))))
     
     when(instFirstIn){
         expdLenReg := expdLenIn

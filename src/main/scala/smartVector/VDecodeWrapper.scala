@@ -21,6 +21,7 @@ class VDecodeOutput(implicit p: Parameters) extends Bundle{
   val vInfo         = new VInfo
   val eewEmulInfo   = new VInfoAll
   val floatRed      = Bool()
+  val inst          = UInt(32.W) //add inst 
 
   //TODO: need to package the bundle from darecreek
   //val extraInfo_for_VIllegal = new 
@@ -53,6 +54,7 @@ class SVDecodeUnit(implicit p: Parameters) extends Module {
   io.out.bits.scalar_opnd_2 := RegEnable(io.in.bits.rs2, io.in.valid)
   io.out.bits.float_opnd_1  := RegEnable(io.in.bits.frs1, io.in.valid)
   io.out.bits.floatRed      := RegEnable(isFloatRedu, io.in.valid)
+  io.out.bits.inst          := RegEnable(io.in.bits.inst,io.in.valid)
   
   val infoCalc = Module(new VInfoCalc)
   infoCalc.io.ctrl       := decode.io.out

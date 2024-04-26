@@ -87,4 +87,15 @@ class RVUExtra extends Bundle {
     //val vpu_ready = Output(Bool())
 } 
 
-
+class RVUCustomReq extends  Bundle{
+    val vs1 = UInt(128.W)
+    val vs2 = UInt(128.W)
+    val custom_vector_inst = UInt(32.W)
+}
+class RVUCustomResp extends  Bundle{
+    val vd = UInt(128.W)
+}
+class RVUCustom extends  Bundle {
+    val req = (Decoupled(new RVUCustomReq))
+    val resp = Flipped(Valid(new RVUCustomResp))
+}

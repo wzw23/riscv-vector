@@ -64,6 +64,8 @@ class SmartVector extends Module {
         //TODO: This is reserved for verification, delete it later
         //val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
         val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
+        //wzw: add interface
+        val rvuCustom = new RVUCustom
     })
 
 
@@ -80,6 +82,7 @@ class SmartVector extends Module {
     val iex     = Module(new VIexWrapper()(p))
     val regFile = Module(new SVRegFileWrapper()(p))
     val svlsu   = Module(new SVlsu()(p))
+    val svcustom= Module(new SVcustom()(p))
 
     decoder.io.in.bits  := io.in.bits
     decoder.io.in.valid := io.in.valid & io.in.ready
@@ -95,10 +98,16 @@ class SmartVector extends Module {
     svlsu.io.mUop <> split.io.out.mUop
     svlsu.io.mUopMergeAttr <> split.io.out.mUopMergeAttr
     split.io.vLSUXcpt <> svlsu.io.xcpt
+    //wzw add
+    svcustom.io.mUop <> split.io.out.mUop
+    svcustom.io.mUopMergeAttr <> split.io.out.mUopMergeAttr
 
     //ChenLu change
     split.io.lsuStallSplit := ~svlsu.io.lsuReady
     merge.io.in.lsuIn <> svlsu.io.lsuOut
+    //wzw:add custom stall logic
+    split.io.customStallSplit := ~svcustom.io.customReady
+    merge.io.in.customIn <> svcustom.io.customout
     
     merge.io.in.mergeInfo <> split.io.out.mUopMergeAttr  
     regFile.io.in.readIn  <> split.io.out.toRegFileRead
@@ -140,6 +149,9 @@ class SmartVector extends Module {
     svlsu.io.dataExchange.xcpt.ae.ld := io.rvuMemory.xcpt.ae.ld
     svlsu.io.dataExchange.xcpt.ae.st := io.rvuMemory.xcpt.ae.st
     
+    //wzw:add custom instruction prcessing
+    io.rvuCustom <> svcustom.io.dataExchange
+
     val sboard  = new Scoreboard(NVPhyRegs, false)
     sboard.clear(merge.io.scoreBoardCleanIO.clearEn, merge.io.scoreBoardCleanIO.clearAddr)
     sboard.set(split.io.scoreBoardSetIO.setEn, split.io.scoreBoardSetIO.setAddr)
