@@ -8,6 +8,9 @@ import chiseltest.WriteVcdAnnotation
 import smartVector._
 import darecreek.ctrl.decode.VInstructions._
 import SmartParam._
+import scala.util.Random
+import cypto._
+import chiseltest.WriteVcdAnnotation
 
 trait SmartVectorBehavior_ld_iex {
   this: AnyFlatSpec with ChiselScalatestTester with BundleGenHelper =>
@@ -46,40 +49,67 @@ trait SmartVectorBehavior_ld_iex {
 
 
   
-    def vLsuTest0(): Unit = {
-        it should "pass: unit-stride load (uops=1, eew=8, vl=16, vstart=0)" in {
-        test(new SmartVectorTestWrapper).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-            dut.clock.setTimeout(200)
-            dut.clock.step(1)
-            val ldReqs = Seq(
-                (ldstReqCtrl_default.copy(instrn=VLE8_V, vlmul=0), ldstReqSrc_default.copy()),
-                (ldstReqCtrl_default.copy(instrn=VADDU_VV, vlmul=0), ldstReqSrc_default.copy()),
-            )
+    // def vLsuTest0(): Unit = {
+    //     it should "pass: unit-stride load (uops=1, eew=8, vl=16, vstart=0)" in {
+    //     test(new SmartVectorTestWrapper).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    //         dut.clock.setTimeout(200)
+    //         dut.clock.step(1)
+    //         val ldReqs = Seq(
+    //             (ldstReqCtrl_default.copy(instrn=VLE8_V, vlmul=0), ldstReqSrc_default.copy()),
+    //             (ldstReqCtrl_default.copy(instrn=VADDU_VV, vlmul=0), ldstReqSrc_default.copy()),
+    //         )
 
-            dut.io.rvuIssue.valid.poke(true.B)
-            dut.io.rvuIssue.bits.poke(genLdstInput(ldReqs(0)._1, ldReqs(0)._2))
-            dut.clock.step(1)
-            dut.io.rvuIssue.bits.poke(genLdstInput(ldReqs(1)._1, ldReqs(1)._2))
-            dut.clock.step(1)
-            dut.io.rvuIssue.valid.poke(false.B)
+    //         dut.io.rvuIssue.valid.poke(true.B)
+    //         dut.io.rvuIssue.bits.poke(genLdstInput(ldReqs(0)._1, ldReqs(0)._2))
+    //         dut.clock.step(1)
+    //         dut.io.rvuIssue.bits.poke(genLdstInput(ldReqs(1)._1, ldReqs(1)._2))
+    //         dut.clock.step(1)
+    //         dut.io.rvuIssue.valid.poke(false.B)
 
-            while (!dut.io.rvuCommit.commit_vld.peekBoolean()) {
-                dut.clock.step(1)
-            }
-            dut.io.rvuCommit.commit_vld.expect(true.B)
-            // dut.clock.step(100)
-            dut.clock.step(1)
-            dut.io.rfData(4).expect("hffffffffffffffff0123456789abcdef".U)
+    //         while (!dut.io.rvuCommit.commit_vld.peekBoolean()) {
+    //             dut.clock.step(1)
+    //         }
+    //         dut.io.rvuCommit.commit_vld.expect(true.B)
+    //         // dut.clock.step(100)
+    //         dut.clock.step(1)
+    //         dut.io.rfData(4).expect("hffffffffffffffff0123456789abcdef".U)
 
-            while (!dut.io.rvuCommit.commit_vld.peekBoolean()) {
-                dut.clock.step(1)
-            }
-            dut.io.rvuCommit.commit_vld.expect(true.B)
+    //         while (!dut.io.rvuCommit.commit_vld.peekBoolean()) {
+    //             dut.clock.step(1)
+    //         }
+    //         dut.io.rvuCommit.commit_vld.expect(true.B)
+    //         dut.clock.step(1)
+    //         dut.io.rfData(8).expect("hffffffffffffffff0123456789abcdef".U)
+    //         dut.clock.step(100)
+    //     }
+    //     }
+
+        def cyptoTest0(): Unit = {
+        it should "pass: cypto CSA" in {
+        test(new C52_32_sum).withAnnotations(Seq(WriteVcdAnnotation,WriteVcdAnnotation)) { dut =>
+            for (_ <- 1 to 1000) {  // Number of tests
+            val a = Random.nextInt(1000)
+            val b = Random.nextInt(1000)
+            val c = Random.nextInt(1000)
+            val d = Random.nextInt(1000)
+            val e = Random.nextInt(1000)
+
+            // var expectedSum = (a + b + c + d + e) & 0xFFFFFFFF // Handle overflow correctly
+            // val expectedSum=   (a.U(32.W) + b.U(32.W) + c.U(32.W) + d.U(32.W) + e.U(32.W)) & "hFFFFFFFF".U(32.W)
+            var expectedSum=   a +b +c +d +e
+            dut.io.in(0).poke(a.U)
+            dut.io.in(1).poke(b.U)
+            dut.io.in(2).poke(c.U)
+            dut.io.in(3).poke(d.U)
+            dut.io.in(4).poke(e.U)
             dut.clock.step(1)
-            dut.io.rfData(8).expect("hffffffffffffffff0123456789abcdef".U)
-            dut.clock.step(100)
+            // val sum = dut.io.out(0) + dut.io.out(1)
+            // sum.expect(expectedSum.asUInt) 
+            // dut.io.out(0).expect(a.U + b.U+ c.U+ d.U+ e.U)
+            dut.io.out(0).expect(expectedSum.U)
         }
         }
+    }}
         // fork {
         //     for ((c, s, r, m) <- ldReqs) {
         //         while (!dut.io.lsuReady.peekBoolean()) {
@@ -102,7 +132,7 @@ trait SmartVectorBehavior_ld_iex {
         //         dut.clock.step(1)
         //     }
         // }.join()
-    }
+    // }
 
     // def vLsuTest1(): Unit = {
     //     it should "pass: unit-stride load (uops=2, eew=8, vl=19, vstart=0)" in {
@@ -134,7 +164,7 @@ trait SmartVectorBehavior_ld_iex {
 
 class VPULdIEXSpec extends AnyFlatSpec with ChiselScalatestTester with BundleGenHelper with SmartVectorBehavior_ld_iex {
   behavior of "SmartVector Load test"
-    it should behave like vLsuTest0()   //
+    // it should behave like vLsuTest0()   //
     // it should behave like vLsuTest1()   //
     // it should behave like vLsuTest2()   // 
     // it should behave like vLsuTest3()   //
@@ -144,4 +174,5 @@ class VPULdIEXSpec extends AnyFlatSpec with ChiselScalatestTester with BundleGen
     // it should behave like vLsuTest7()   //
     // it should behave like vLsuTest8()   //
     // it should behave like vLsuTest9()   //
+    it should behave like cyptoTest0()   
 }

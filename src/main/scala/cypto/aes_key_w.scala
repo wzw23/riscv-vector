@@ -28,7 +28,3 @@ class Aes_key_wa extends Module{
   aes_key.io <> io
   }
 
-object Main extends App {
-  println("Generating the Sha_w hardware")
-  emitVerilog(new Aes_key_wa(), Array("--target-dir", "generated"))
-}

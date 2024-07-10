@@ -12,7 +12,7 @@ class aes_en_de extends BlackBox with HasBlackBoxResource{
     val last = Input(Bool())
 
     val block = Input(UInt(128.W))
-    val round_key= Output(UInt(128.W))
+    val round_key= Input(UInt(128.W))
     val new_block = Output(UInt(128.W))
   })
 
@@ -27,7 +27,7 @@ class Aes extends Module{
     val last = Input(Bool())
 
     val block = Input(UInt(128.W))
-    val round_key= Output(UInt(128.W))
+    val round_key= Input(UInt(128.W))
     val new_block = Output(UInt(128.W))
   })
   val aes_core_inst = Module(new aes_en_de)
