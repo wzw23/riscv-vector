@@ -35,7 +35,8 @@ class VDecode extends Module {
 
   //-- Decoded signals --
   val vecDecode = Seq((new VecDecode0), (new VecDecode1), (new VecDecode2), 
-                      (new VecDecode3), (new VecDecode4), (new VecDecode5))
+                      (new VecDecode3), (new VecDecode4), (new VecDecode5), 
+                      (new VecDecode6))// wzw change
   val decodersOut = vecDecode map { dec =>
     val truthTable = TruthTable(dec.table, dec.default)
     decoder(QMCMinimizer, io.in, truthTable)
@@ -51,7 +52,8 @@ class VDecode extends Module {
                   vCtrl.arith, vCtrl.crossLane,
                   vCtrl.alu, vCtrl.mul, vCtrl.fp, vCtrl.div, 
                   vCtrl.fixP, vCtrl.redu, vCtrl.mask, vCtrl.perm,
-                  vCtrl.widen, vCtrl.widen2, vCtrl.narrow, vCtrl.narrow_to_1
+                  vCtrl.widen, vCtrl.widen2, vCtrl.narrow, vCtrl.narrow_to_1,
+                  vCtrl.custom
                  )
   ctrls zip vCtrlSigs.asBools.reverse.tail map {case (c, d) => c := d}
 

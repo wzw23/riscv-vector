@@ -94,6 +94,7 @@ class VCtrl extends Bundle {
   val widen2 = Bool() // 2*sew = 2*sew op sew
   val narrow = Bool() // sew = 2*sew op sew
   val narrow_to_1 = Bool() // Compare, carry-out producing instructions
+  val custom = Bool() //wzw: add custom ctrl signal
   def vv = !funct3(2) && !(funct3(1) && funct3(0))
   def vx = funct3(2) 
   def vi = !funct3(2) && funct3(1) && funct3(0) 
