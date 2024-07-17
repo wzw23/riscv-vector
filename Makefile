@@ -35,6 +35,20 @@ verilog_reduction:
 verilog_perm:
 	sbt "runMain darecreek.exu.vfu.perm.Main"
 
+verilog_cypto:
+	sbt "runMain cypto.Main"
+
+# test
+v_test: verilog_cypto
+	@$(MAKE) -f ./test/test.mk comp
+	@$(MAKE) -f ./test/test.mk run
+
+v_run :
+	@$(MAKE) -f ./test/test.mk run
+
+verdi:
+	verdi -dbdir ./test/base_func/exec/simv.daidir
+
 verilog_allFu: verilog_alu verilog_mac verilog_fp verilog_div verilog_vmask verilog_reduction verilog_perm
 
 clean:
