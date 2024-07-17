@@ -67,6 +67,8 @@ class SmartVector extends Module {
         //TODO: This is reserved for verification, delete it later
         //val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
         val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
+        //wzw: add interface
+        //val rvuCustom = new RVUCustom
     })
 
 
@@ -86,7 +88,8 @@ class SmartVector extends Module {
     // val svSegLsu = Module(new SVSegLsu()(p))
 
     val svlsuWrapper = Module(new SVlsuWrapper()(p))
-    
+    //wzw
+    //val svcustom= Module(new SVcustom()(p))
     decoder.io.in.bits  := io.in.bits
     decoder.io.in.valid := io.in.valid & io.in.ready
     split.io.in.decodeIn <> decoder.io.out
@@ -102,10 +105,16 @@ class SmartVector extends Module {
     svlsuWrapper.io.mUopMergeAttr <> split.io.out.mUopMergeAttr
     split.io.vLSUXcpt := Mux(svlsuWrapper.io.lsuOut.valid, svlsuWrapper.io.lsuOut.bits.xcpt, 0.U.asTypeOf(new VLSUXcpt))
     decoder.io.vLSUXcpt := Mux(svlsuWrapper.io.lsuOut.valid, svlsuWrapper.io.lsuOut.bits.xcpt, 0.U.asTypeOf(new VLSUXcpt))
+     //wzw add
+     //   svcustom.io.mUop <> split.io.out.mUop
+     //   svcustom.io.mUopMergeAttr <> split.io.out.mUop
     //ChenLu change
     split.io.lsuStallSplit := ~svlsuWrapper.io.lsuReady
     merge.io.in.lsuIn <> svlsuWrapper.io.lsuOut
-    
+    //wzw:add custom stall logic
+    //    split.io.customStallSplit := ~svcustom.io.customReady
+    //    merge.io.in.customIn <> svcustom.io.customout
+
     merge.io.in.mergeInfo <> split.io.out.mUopMergeAttr  
     regFile.io.in.readIn  <> split.io.out.toRegFileRead
     regFile.io.in.writeIn <> merge.io.out.toRegFileWrite
@@ -146,12 +155,15 @@ class SmartVector extends Module {
     svlsuWrapper.io.dataExchange.xcpt.ae.ld := io.rvuMemory.xcpt.ae.ld
     svlsuWrapper.io.dataExchange.xcpt.ae.st := io.rvuMemory.xcpt.ae.st
     
+    //wzw:add custom instruction prcessing
+    //io.rvuCustom <> svcustom.io.dataExchange
+
     val sboard  = new Scoreboard(NVPhyRegs, false)
     sboard.clear(merge.io.scoreBoardCleanIO.clearEn, merge.io.scoreBoardCleanIO.clearAddr)
     sboard.clearN(merge.io.scoreBoardCleanIO.clearMultiEn, merge.io.scoreBoardCleanIO.clearAddr, merge.io.scoreBoardCleanIO.clearNum)
     sboard.set(split.io.scoreBoardSetIO.setEn, split.io.scoreBoardSetIO.setAddr)
     sboard.setN(split.io.scoreBoardSetIO.setMultiEn, split.io.scoreBoardSetIO.setAddr, split.io.scoreBoardSetIO.setNum)
-    sboard.clearAll(merge.io.scoreBoardCleanIO.clearAll)    
+    sboard.clearAll(merge.io.scoreBoardCleanIO.clearAll)
     split.io.scoreBoardReadIO.readBypassed1 := sboard.readBypassed(split.io.scoreBoardReadIO.readAddr1)
     split.io.scoreBoardReadIO.readBypassed2 := sboard.readBypassed(split.io.scoreBoardReadIO.readAddr2)
     split.io.scoreBoardReadIO.readBypassed3 := sboard.readBypassed(split.io.scoreBoardReadIO.readAddr3)

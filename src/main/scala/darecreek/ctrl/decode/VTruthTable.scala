@@ -483,10 +483,15 @@ class VecDecode6 extends VecDecode {
   val default =          BitPat("b0 ??? ??   ??    ??   ? ? ? ? ? ? ? ?  ?????")
   val table = Seq(
     // Vector reduction instructions
-    CUSTOM0_VS1       -> BitPat("b1 001 00   00    10   0 0 0 0 0 0 0 0  00001"),
-    CUSTOM0_VS1_VS2   -> BitPat("b1 011 00   00    10   0 0 0 0 0 0 0 0  00001"),
-    CUSTOM0_VD        -> BitPat("b1 000 10   00    10   0 0 0 0 0 0 0 0  00001"),
-    CUSTOM0_VD_VS1    -> BitPat("b1 001 10   00    10   0 0 0 0 0 0 0 0  00001"),
-    CUSTOM0_VD_VS1_VS2-> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    // CUSTOM0_VS1       -> BitPat("b1 001 00   00    10   0 0 0 0 0 0 0 0  00001"),
+    // CUSTOM0_VS1_VS2   -> BitPat("b1 011 00   00    10   0 0 0 0 0 0 0 0  00001"),
+    // CUSTOM0_VD        -> BitPat("b1 000 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    // CUSTOM0_VD_VS1    -> BitPat("b1 001 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    // CUSTOM0_VD_VS1_VS2-> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_V_VV        -> BitPat("b1 011 00   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_V_IV        -> BitPat("b1 001 00   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_V_VVV       -> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_IVV         -> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_VVV         -> BitPat("b1 111 10   00    10   0 0 0 0 0 0 0 0  00001"),
      )
 }

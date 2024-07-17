@@ -17,7 +17,8 @@ class VMerge (implicit p : Parameters) extends Module {
             val mergeInfo = Input(ValidIO(new MuopMergeAttr))
             val aluIn = Input(ValidIO(new IexOutput))
             val lsuIn = Input(ValidIO(new LsuOutput))
-            val customIn = Input(ValidIO(new CustomOutput))
+            //wzw
+            //val customIn = Input(ValidIO(new CustomOutput))
             val permIn = Input(new VPermOutput)
         }
         val out = new Bundle{
@@ -80,12 +81,14 @@ class VMerge (implicit p : Parameters) extends Module {
         io.out.toRegFileWrite.rfWriteMask := io.in.lsuIn.bits.rfWriteMask
         io.out.toRegFileWrite.rfWriteIdx  := io.in.lsuIn.bits.rfWriteIdx
         io.out.toRegFileWrite.rfWriteData := io.in.lsuIn.bits.data
-    }.elsewhen(io.in.customIn.valid && io.in.lsuIn.bits.rfWriteEn)//wzw add
-    {
-        io.out.toRegFileWrite.rfWriteEn  := true.B
-        io.out.toRegFileWrite.rfWriteIdx := rfWriteIdx
-        io.out.toRegFileWrite.rfWriteData := io.in.customIn.bits.vd
-    }.otherwise{
+    }
+    //.elsewhen(io.in.customIn.valid && io.in.lsuIn.bits.rfWriteEn)//wzw add
+    //{
+    //    io.out.toRegFileWrite.rfWriteEn  := true.B
+    //    io.out.toRegFileWrite.rfWriteIdx := rfWriteIdx
+    //    io.out.toRegFileWrite.rfWriteData := io.in.customIn.bits.vd
+    //}
+    .otherwise{
         io.out.toRegFileWrite := 0.U.asTypeOf(new regWriteIn)
     }
 
