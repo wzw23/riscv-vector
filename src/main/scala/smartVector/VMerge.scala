@@ -18,7 +18,7 @@ class VMerge (implicit p : Parameters) extends Module {
             val aluIn = Input(ValidIO(new IexOutput))
             val lsuIn = Input(ValidIO(new LsuOutput))
             //wzw
-            //val customIn = Input(ValidIO(new CustomOutput))
+            val customIn = Input(ValidIO(new CustomOutput))
             val permIn = Input(new VPermOutput)
         }
         val out = new Bundle{
@@ -82,12 +82,13 @@ class VMerge (implicit p : Parameters) extends Module {
         io.out.toRegFileWrite.rfWriteIdx  := io.in.lsuIn.bits.rfWriteIdx
         io.out.toRegFileWrite.rfWriteData := io.in.lsuIn.bits.data
     }
-    //.elsewhen(io.in.customIn.valid && io.in.lsuIn.bits.rfWriteEn)//wzw add
-    //{
-    //    io.out.toRegFileWrite.rfWriteEn  := true.B
-    //    io.out.toRegFileWrite.rfWriteIdx := rfWriteIdx
-    //    io.out.toRegFileWrite.rfWriteData := io.in.customIn.bits.vd
-    //}
+    .elsewhen(io.in.customIn.valid && io.in.customIn.bits.rfWriteEn)//wzw add
+    {
+       io.out.toRegFileWrite.rfWriteEn  := true.B
+       io.out.toRegFileWrite.rfWriteMask := Fill(VLEN/8, 0.U)
+       io.out.toRegFileWrite.rfWriteIdx := rfWriteIdx
+       io.out.toRegFileWrite.rfWriteData := io.in.customIn.bits.data
+    }
     .otherwise{
         io.out.toRegFileWrite := 0.U.asTypeOf(new regWriteIn)
     }
@@ -118,6 +119,14 @@ class VMerge (implicit p : Parameters) extends Module {
         io.out.commitInfo.bits.floatRegWriteEn  := false.B
         io.out.commitInfo.bits.ldest            := DontCare
         io.out.commitInfo.bits.data             := io.in.lsuIn.bits.data
+        io.out.commitInfo.bits.vxsat            := false.B
+        io.out.commitInfo.bits.fflags           := 0.U
+    }.elsewhen(io.in.customIn.valid && io.in.customIn.bits.muopEnd){ //wzw
+        io.out.commitInfo.valid := true.B
+        io.out.commitInfo.bits.scalarRegWriteEn := false.B
+        io.out.commitInfo.bits.floatRegWriteEn  := false.B
+        io.out.commitInfo.bits.ldest            := DontCare
+        io.out.commitInfo.bits.data             := DontCare
         io.out.commitInfo.bits.vxsat            := false.B
         io.out.commitInfo.bits.fflags           := 0.U
     }otherwise{

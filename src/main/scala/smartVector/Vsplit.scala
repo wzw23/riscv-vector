@@ -124,6 +124,7 @@ class Vsplit(implicit p : Parameters) extends Module {
         val scoreBoardSetIO = Flipped(new ScoreboardSetIO)
         val scoreBoardReadIO = Flipped(new ScoreboardReadIO)
         val lsuStallSplit = Input(Bool()) 
+        val customStallSplit = Input(Bool()) 
         val iexNeedStall  = Input(Bool())
         val vLSUXcpt = Input (new VLSUXcpt)
         val excpInfo = Output(new ExcpInfo)

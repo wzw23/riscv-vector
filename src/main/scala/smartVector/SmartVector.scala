@@ -9,6 +9,7 @@ import darecreek.exu.vfu.VFuParameters
 import xiangshan.XSCoreParamsKey
 import xiangshan.XSCoreParameters
 import SmartParam._
+import vcix._
 
 class RVUTestResult extends Bundle {
     val commit_vld   = Output(Bool())
@@ -68,7 +69,7 @@ class SmartVector extends Module {
         //val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
         val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
         //wzw: add interface
-        //val rvuCustom = new RVUCustom
+        val vcix = new(VcixIO)
     })
 
 
@@ -89,7 +90,7 @@ class SmartVector extends Module {
 
     val svlsuWrapper = Module(new SVlsuWrapper()(p))
     //wzw
-    //val svcustom= Module(new SVcustom()(p))
+    val svcustom= Module(new SVcustom()(p))
     decoder.io.in.bits  := io.in.bits
     decoder.io.in.valid := io.in.valid & io.in.ready
     split.io.in.decodeIn <> decoder.io.out
@@ -105,15 +106,15 @@ class SmartVector extends Module {
     svlsuWrapper.io.mUopMergeAttr <> split.io.out.mUopMergeAttr
     split.io.vLSUXcpt := Mux(svlsuWrapper.io.lsuOut.valid, svlsuWrapper.io.lsuOut.bits.xcpt, 0.U.asTypeOf(new VLSUXcpt))
     decoder.io.vLSUXcpt := Mux(svlsuWrapper.io.lsuOut.valid, svlsuWrapper.io.lsuOut.bits.xcpt, 0.U.asTypeOf(new VLSUXcpt))
-     //wzw add
-     //   svcustom.io.mUop <> split.io.out.mUop
-     //   svcustom.io.mUopMergeAttr <> split.io.out.mUop
+    //wzw add
+    svcustom.io.mUop <> split.io.out.mUop
+    svcustom.io.mUopMergeAttr <> split.io.out.mUopMergeAttr
     //ChenLu change
     split.io.lsuStallSplit := ~svlsuWrapper.io.lsuReady
     merge.io.in.lsuIn <> svlsuWrapper.io.lsuOut
     //wzw:add custom stall logic
-    //    split.io.customStallSplit := ~svcustom.io.customReady
-    //    merge.io.in.customIn <> svcustom.io.customout
+    split.io.customStallSplit := ~svcustom.io.customReady
+    merge.io.in.customIn <> svcustom.io.customout
 
     merge.io.in.mergeInfo <> split.io.out.mUopMergeAttr  
     regFile.io.in.readIn  <> split.io.out.toRegFileRead
@@ -156,7 +157,7 @@ class SmartVector extends Module {
     svlsuWrapper.io.dataExchange.xcpt.ae.st := io.rvuMemory.xcpt.ae.st
     
     //wzw:add custom instruction prcessing
-    //io.rvuCustom <> svcustom.io.dataExchange
+    io.vcix <> svcustom.io.vcix
 
     val sboard  = new Scoreboard(NVPhyRegs, false)
     sboard.clear(merge.io.scoreBoardCleanIO.clearEn, merge.io.scoreBoardCleanIO.clearAddr)
