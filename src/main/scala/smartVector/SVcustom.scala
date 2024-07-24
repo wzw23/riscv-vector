@@ -28,7 +28,7 @@ class SVcustomIO(implicit p: Parameters) extends ParameterizedBundle()(p) {
 class SVcustom(implicit p: Parameters) extends Module {
     val io = IO(new SVcustomIO);
     val q = Module(new Queue(new SaveCustomMessage ,entries = 4))
-    io.vcix.req.valid := io.mUop.valid
+    io.vcix.req.valid := io.mUop.valid && io.mUop.bits.uop.ctrl.custom
     io.customReady := io.vcix.req.ready && q.io.enq.ready
     //需要根据译码信息对data1 data2 data3的值进行选择
     //data1=>funct3:100->xs1 011->simm 101->fs1 000->vs1

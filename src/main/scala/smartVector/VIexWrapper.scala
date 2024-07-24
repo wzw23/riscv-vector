@@ -48,7 +48,7 @@ class VIexWrapper(implicit p : Parameters) extends Module {
 
   // IEX input source
   val mUop = io.in.bits
-  val mUopValid = io.in.valid && ~io.in.bits.uop.ctrl.isLdst
+  val mUopValid = io.in.valid && ~io.in.bits.uop.ctrl.isLdst && ~io.in.bits.uop.ctrl.custom
 
   // val divNotReady  = ~SVDiv.io.in.ready
   // val fpuNotReady  = ~SVFpu.io.in.ready

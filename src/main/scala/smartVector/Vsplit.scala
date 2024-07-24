@@ -61,6 +61,7 @@ class VUopCtrlW extends Bundle {
   val redu        = Bool()
   val mask        = Bool()
   val perm        = Bool()
+  val custom      = Bool()//wzw
   val floatRed    = Bool()
   val vGatherEi16EEW8  = Bool()
   val vGatherEi16EEW16 = Bool()
@@ -473,6 +474,7 @@ class Vsplit(implicit p : Parameters) extends Module {
     mUopIn.bits.uop.ctrl.redu        := ctrl.redu
     mUopIn.bits.uop.ctrl.mask        := ctrl.mask
     mUopIn.bits.uop.ctrl.perm        := ctrl.perm
+    mUopIn.bits.uop.ctrl.custom      := ctrl.custom//wzw
     mUopIn.bits.uop.ctrl.lsrc        := ctrl.lsrc
     mUopIn.bits.uop.ctrl.ldest       := ctrl.ldest
     mUopIn.bits.uop.ctrl.floatRed    := floatRed
