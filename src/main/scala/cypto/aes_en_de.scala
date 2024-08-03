@@ -16,9 +16,9 @@ class aes_en_de extends BlackBox with HasBlackBoxResource{
     val new_block = Output(UInt(128.W))
   })
 
-  addResource("/aes_en_de.v")
-  addResource("/aes_4sbox.v")
-  addResource("/aes_4inv_sbox.v")
+  addResource("vsrc/aes_en_de.v")
+  addResource("vsrc/aes_4sbox.v")
+  addResource("vsrc/aes_4inv_sbox.v")
 }
 
 class Aes extends Module{

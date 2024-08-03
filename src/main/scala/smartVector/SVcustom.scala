@@ -66,7 +66,7 @@ class SVcustom(implicit p: Parameters) extends Module {
     }
     //写入queue队列的肯定是写回向量寄存器的
     q.io.enq.valid := io.vcix.req.fire && (~io.mUop.bits.uop.ctrl.vm.asBool)
-    q.io.enq.bits.rfWriteIdx := io.mUopMergeAttr.bits.regDstIdx
+    q.io.enq.bits.rfWriteIdx := io.mUopMergeAttr.bits.ldest
     q.io.enq.bits.muopEnd := io.mUopMergeAttr.bits.muopEnd
     q.io.enq.bits.vm := io.mUop.bits.uop.ctrl.vm.asBool
     //由于vmerge不能并行接收多条指令，所以ready信号一直拉高

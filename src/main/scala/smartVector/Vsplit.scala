@@ -152,7 +152,7 @@ class Vsplit(implicit p : Parameters) extends Module {
     val fire2PipeReg = Wire(Bool())
 
     val pipeRegReady    = WireInit(false.B)
-    val exuReady        = ~io.lsuStallSplit && ~io.iexNeedStall
+    val exuReady        = ~io.lsuStallSplit && ~io.iexNeedStall && ~io.customStallSplit
 
     //when (instFirstIn){       
     //    vCtrl(0)            := io.in.decodeIn.bits.vCtrl

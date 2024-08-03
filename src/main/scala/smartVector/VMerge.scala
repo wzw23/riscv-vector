@@ -86,7 +86,7 @@ class VMerge (implicit p : Parameters) extends Module {
     {
        io.out.toRegFileWrite.rfWriteEn  := true.B
        io.out.toRegFileWrite.rfWriteMask := Fill(VLEN/8, 0.U)
-       io.out.toRegFileWrite.rfWriteIdx := rfWriteIdx
+       io.out.toRegFileWrite.rfWriteIdx := io.in.customIn.bits.rfWriteIdx
        io.out.toRegFileWrite.rfWriteData := io.in.customIn.bits.data
     }
     .otherwise{

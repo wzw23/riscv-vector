@@ -9,11 +9,11 @@ import darecreek.exu.vfucore.div._
 class aes_key_w extends BlackBox with HasBlackBoxResource{
   val io = IO(new Bundle{
     val key = Input(UInt(128.W))
-    val round = Input(UInt(3.W))
+    val round = Input(UInt(4.W))
     val round_key = Output(UInt(128.W))
   })
 
-  addResource("/aes_key_w.v")
+  addResource("vsrc/aes_key_w.v")
 }
 
 class Aes_key_wa extends Module{

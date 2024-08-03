@@ -25,20 +25,20 @@ class Sha_w extends Module{
   val W_1  = io.vd_in(63,32)
   val W_2  = io.vd_in(95,64)
   val W_3  = io.vd_in(127,96)
-  val W_4  = io.vs1_in(31,0)
-  val W_9  = io.vs1_in(63,32)
-  val W_10 = io.vs1_in(95,64)
-  val W_11 = io.vs1_in(127,96)
-  val W_12 = io.vs2_in(31,0)
-  val W_13 = io.vs2_in(63,32)
-  val W_14 = io.vs2_in(95,64)
-  val W_15 = io.vs2_in(127,96)
+  val W_4  = io.vs2_in(31,0)
+  val W_9  = io.vs2_in(63,32)
+  val W_10 = io.vs2_in(95,64)
+  val W_11 = io.vs2_in(127,96)
+  val W_12 = io.vs1_in(31,0)
+  val W_13 = io.vs1_in(63,32)
+  val W_14 = io.vs1_in(95,64)
+  val W_15 = io.vs1_in(127,96)
 
   // Compute new values and store them
-  val W_16 = sig1(W_14) + W_9 +  sig0(W_1) + W_0
-  val W_17 = sig1(W_15) + W_10 + sig0(W_2) + W_1
-  val W_18 = sig1(W_16) + W_11 + sig0(W_3) + W_2
-  val W_19 = sig1(W_17) + W_12 + sig0(W_4) + W_3
+  val W_16 = (sig1(W_14) + W_9 +  sig0(W_1) + W_0)(31,0)
+  val W_17 = (sig1(W_15) + W_10 + sig0(W_2) + W_1)(31,0)
+  val W_18 = (sig1(W_16) + W_11 + sig0(W_3) + W_2)(31,0)
+  val W_19 = (sig1(W_17) + W_12 + sig0(W_4) + W_3)(31,0)
 
   io.vd_out := Cat(W_19, W_18, W_17, W_16).asUInt
 }

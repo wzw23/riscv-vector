@@ -21,7 +21,7 @@ class Sm3_w extends Module{
   }
 
   def ZVKSH_W(M16: UInt, M9: UInt, M3: UInt, M13: UInt, M6: UInt): UInt = {
-    P_1(M16 ^ M9 ^ ROL32(M3, 15)) ^ ROL32(M13, 7) ^ M6
+    (P_1(M16 ^ M9 ^ ROL32(M3, 15)(31,0)) ^ ROL32(M13, 7)(31,0)(31,0) ^ M6)(31,0)
   }
   io.w_out(0) := ZVKSH_W(io.w_in(0), io.w_in(7), io.w_in(13), io.w_in(3), io.w_in(10)) //16
   io.w_out(1) := ZVKSH_W(io.w_in(1), io.w_in(8), io.w_in(14), io.w_in(4), io.w_in(11)) //17

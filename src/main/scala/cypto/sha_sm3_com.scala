@@ -21,7 +21,7 @@ class Sha_sm3_com extends Module{
         val h_in = Input(UInt(32.W))
         val W_in = Input(UInt(32.W))
         val Wx_in = Input(UInt(32.W))//sha:wx_in = k[i] sm3:wx_in = w*
-        val round_in = Input(UInt(5.W))
+        val round_in = Input(UInt(6.W))
         val a_out = Output(UInt(32.W))
         val b_out = Output(UInt(32.W))
         val c_out = Output(UInt(32.W))
@@ -32,29 +32,29 @@ class Sha_sm3_com extends Module{
         val h_out = Output(UInt(32.W))
     })
     //sm
-    def FF1(X: UInt, Y: UInt, Z: UInt): UInt = X ^ Y ^ Z
-    def FF2(X: UInt, Y: UInt, Z: UInt): UInt = (X & Y) | (X & Z) | (Y & Z)
-    def FF_j(X: UInt, Y: UInt, Z: UInt, j: UInt): UInt = Mux(j <= 15.U, FF1(X, Y, Z), FF2(X, Y, Z))
+    def FF1(X: UInt, Y: UInt, Z: UInt): UInt = (X ^ Y ^ Z)(31,0)
+    def FF2(X: UInt, Y: UInt, Z: UInt): UInt = ((X & Y) | (X & Z) | (Y & Z))(31,0)
+    def FF_j(X: UInt, Y: UInt, Z: UInt, j: UInt): UInt = (Mux(j <= 15.U, FF1(X, Y, Z), FF2(X, Y, Z)))(31,0)
 
-    def GG1(X: UInt, Y: UInt, Z: UInt): UInt = X ^ Y ^ Z
-    def GG2(X: UInt, Y: UInt, Z: UInt): UInt = (X & Y) | (~X & Z)
-    def GG_j(X: UInt, Y: UInt, Z: UInt, j: UInt): UInt = Mux(j <= 15.U, GG1(X, Y, Z), GG2(X, Y, Z))
+    def GG1(X: UInt, Y: UInt, Z: UInt): UInt = (X ^ Y ^ Z)(31,0)
+    def GG2(X: UInt, Y: UInt, Z: UInt): UInt = ((X & Y) | (~X & Z))(31,0)
+    def GG_j(X: UInt, Y: UInt, Z: UInt, j: UInt): UInt = (Mux(j <= 15.U, GG1(X, Y, Z), GG2(X, Y, Z)))(31,0)
 
-    def T_j(j: UInt): UInt = Mux(j <= 15.U, 0x79CC4519.U(32.W), 0x7A879D8A.U(32.W))
-    def P_0(X: UInt): UInt = X ^ (X.rotateLeft(9)) ^ (X.rotateLeft(17))
+    def T_j(j: UInt): UInt = Mux(j <= 15.U, 0x79CC4519.U(32.W), 0x7A879D8A.U(32.W))(31,0)
+    def P_0(X: UInt): UInt = (X ^ (X.rotateLeft(9)) ^ (X.rotateLeft(17)))(31,0)
     //sha
-    def ROTR(x: UInt, n: Int): UInt = (x >> n) | (x << (32 - n))
-    def MAJ(x: UInt, y: UInt, z: UInt): UInt = (x & y) ^ (x & z) ^ (y & z)
-    def CH(x: UInt, y: UInt, z: UInt): UInt = (x & y) ^ (~x & z)
-    def SUM0(x:UInt) : UInt = ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22)
-    def SUM1(x:UInt) : UInt = ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25)
+    def ROTR(x: UInt, n: Int): UInt = ((x >> n) | (x << (32 - n)))(31,0)
+    def MAJ(x: UInt, y: UInt, z: UInt): UInt = ((x & y) ^ (x & z) ^ (y & z))(31,0)
+    def CH(x: UInt, y: UInt, z: UInt): UInt = ((x & y) ^ (~x & z))(31,0)
+    def SUM0(x:UInt) : UInt = (ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22))(31,0)
+    def SUM1(x:UInt) : UInt = (ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25))(31,0)
     //SS1 SS2
     val csa = Module(new C32_32())
     val a_in_rotateLeft = io.a_in.rotateLeft(12)
     csa.io.in(0) := a_in_rotateLeft
     csa.io.in(1) := io.e_in
-    csa.io.in(2) := T_j(io.round_in%(32.U))
-    val ss1 = csa.io.out(0) + (csa.io.out(1) << 1)
+    csa.io.in(2) := (T_j(io.round_in).rotateLeft(io.round_in))(31,0)
+    val ss1 = ((csa.io.out(0) + (csa.io.out(1) << 1))(31,0)).rotateLeft(7)(31,0)
     val ss2 = ss1 ^ (a_in_rotateLeft)
 
     // B C D G H F 赋值
@@ -62,7 +62,7 @@ class Sha_sm3_com extends Module{
     io.g_out := Mux(io.sel,io.f_in,io.f_in.rotateLeft(19))
     io.f_out := io.e_in
     io.b_out := io.a_in
-    io.c_out := Mux(io.sel,io.b_in,io.b_in.rotateLeft(19))
+    io.c_out := Mux(io.sel,io.b_in,io.b_in.rotateLeft(9))
     io.d_out := io.c_in
 
 
@@ -89,11 +89,11 @@ class Sha_sm3_com extends Module{
     c42_32.io.in(3) := Mux(io.sel,c52_32.io.out(1) << 1,io.Wx_in)
 
     c32_32.io.in(0) := c52_32.io.out(0)
-    c32_32.io.in(1) := c52_32.io.out(1)
+    c32_32.io.in(1) := c52_32.io.out(1) << 1
     c32_32.io.in(2) := Mux(io.sel,io.d_in,0.U)
 
     io.a_out := c42_32.io.out(0) + (c42_32.io.out(1)<<1)
-    val c32_out = c32_32.io.out(0) + (c32_32.io.out(1)<<1)
+    val c32_out = c32_32.io.out(0) + (c32_32.io.out(1)<<1)(31,0)
     io.e_out := Mux(io.sel , c32_out , P_0(c32_out))
 
 }
