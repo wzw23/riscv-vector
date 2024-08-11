@@ -1,4 +1,3 @@
-`default_nettype none
 
 module aes_key_w(
                    input wire [127 : 0]  key,

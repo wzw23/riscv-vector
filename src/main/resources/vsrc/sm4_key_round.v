@@ -5,12 +5,17 @@ module one_round_for_key_exp
 		count_round_in,
 		data_in,
 		// ck_parameter_in,
-		result_out
+		result_out,
+
+		sbox_out,
+		sbox_in
 	);
 
 input 	[4   : 0] 	count_round_in;
 input	[127 : 0]	data_in;
 output	[127 : 0]	result_out;
+output	[31 : 0]	sbox_out;
+input	[31 : 0]	sbox_in;
 
 
 localparam FK0	=	32'ha3b1bac6;
@@ -66,38 +71,36 @@ assign	{	byte_0,
 			byte_2,
 			byte_3}	=	data_for_transform;
 
-assign	word_replaced	=	{	byte_0_replaced,
-								byte_1_replaced,
-								byte_2_replaced,
-								byte_3_replaced};
+assign	word_replaced	=	sbox_in;
 
-bSbox	u_0
-	(
-		.A(byte_0),
-        .encrypt(2'd2),
-		.Q(byte_0_replaced)														
-	);
+assign sbox_out = data_for_transform;
+// bSbox	u_0
+// 	(
+// 		.A(byte_0),
+//         .encrypt(2'd2),
+// 		.Q(byte_0_replaced)														
+// 	);
 	
-bSbox	u_1
-	(
-		.A(byte_1),
-        .encrypt(2'd2),
-		.Q(byte_1_replaced)														
-	);
+// bSbox	u_1
+// 	(
+// 		.A(byte_1),
+//         .encrypt(2'd2),
+// 		.Q(byte_1_replaced)														
+// 	);
 	
-bSbox	u_2
-	(
-		.A(byte_2),
-        .encrypt(2'd2),
-		.Q(byte_2_replaced)														
-	);
+// bSbox	u_2
+// 	(
+// 		.A(byte_2),
+//         .encrypt(2'd2),
+// 		.Q(byte_2_replaced)														
+// 	);
 	
-bSbox	u_3
-	(
-		.A(byte_3),
-        .encrypt(2'd2),
-		.Q(byte_3_replaced)														
-	);	
+// bSbox	u_3
+// 	(
+// 		.A(byte_3),
+//         .encrypt(2'd2),
+// 		.Q(byte_3_replaced)														
+// 	);	
 
 assign	data_after_transform_key	= (word_replaced ^ {word_replaced[18:0], word_replaced[31:19]}) 
 					^ {word_replaced[8:0], word_replaced[31:9]};

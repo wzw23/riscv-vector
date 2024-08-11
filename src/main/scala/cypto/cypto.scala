@@ -27,22 +27,33 @@ class Crypto extends Module {
   val is_vrev    =(io.vcix.req.bits.funct7(6,1) === "b001000".U && io.vcix.req.bits.funct3 === "b111".U)
   val is_vsm3c = is_vsm3c_h || is_vsm3c_l;
   //sm4
-  val sm4_ende = Module(new SM4_EN_DE)
-  val sm4_key = Module(new SM4_KEY)
-  sm4_ende.io.data_in := io.vcix.req.bits.data2
-  sm4_ende.io.round_key_in := io.vcix.req.bits.data1
-  sm4_key.io.count_round_in := io.vcix.req.bits.rs1
-  sm4_key.io.data_in := io.vcix.req.bits.data2
+  // val sm4_ende = Module(new SM4_EN_DE)
+  // val sm4_key = Module(new SM4_KEY)
+  // sm4_ende.io.data_in := io.vcix.req.bits.data2
+  // sm4_ende.io.round_key_in := io.vcix.req.bits.data1
+  // sm4_key.io.count_round_in := io.vcix.req.bits.rs1
+  // sm4_key.io.data_in := io.vcix.req.bits.data2
+  //aes,sm4
+  val aes_sm4 = Module(new AES_SM4);
+  aes_sm4.io.is_vsm4k := is_vsm4k
+  aes_sm4.io.is_vsm4r := is_vsm4r
+  aes_sm4.io.is_vaesem := is_vaesem
+  aes_sm4.io.is_vaesef := is_vaesef
+  aes_sm4.io.is_vaesdm := is_vaesdm
+  aes_sm4.io.is_vaesdf := is_vaesdf
+  aes_sm4.io.data1 := io.vcix.req.bits.data1
+  aes_sm4.io.data2 := io.vcix.req.bits.data2
+  aes_sm4.io.rs1 := io.vcix.req.bits.rs1
 
   //128 ->128 vaesem vaesef vaesdf vaeskf1 vsha2c vsha2me
   //256 -> 256 vsm3c vsm3me
   //vaesem vaesef vaesdf vaeskf1
-  val aes_en_de = Module(new Aes)
+  // val aes_en_de = Module(new Aes)
   io.vcix.req.ready := true.B
-  aes_en_de.io.en_de := is_vaesem || is_vaesef
-  aes_en_de.io.last := is_vaesdf || is_vaesef
-  aes_en_de.io.block := io.vcix.req.bits.data1
-  aes_en_de.io.round_key := io.vcix.req.bits.data2
+  // aes_en_de.io.en_de := is_vaesem || is_vaesef
+  // aes_en_de.io.last := is_vaesdf || is_vaesef
+  // aes_en_de.io.block := io.vcix.req.bits.data1
+  // aes_en_de.io.round_key := io.vcix.req.bits.data2
   // val vdAesc = RegEnable(aes_en_de.io.new_block,io.vcix.req.fire &&(is_vaesdf || is_vaesdm || is_vaesef || is_vaesem))
 
   //is_vaeskf1
@@ -187,7 +198,7 @@ class Crypto extends Module {
     is_vrev
 
     crypto_q.io.in.bits.vd_data := Mux1H(Seq(
-    (io.vcix.req.fire &&(is_vaesdf || is_vaesdm || is_vaesef || is_vaesem)) -> aes_en_de.io.new_block,
+    (io.vcix.req.fire &&(is_vaesdf || is_vaesdm || is_vaesef || is_vaesem)) -> aes_sm4.io.result,
     (io.vcix.req.fire &&(is_vaeskf1)) -> aes_key_w.io.round_key,
     (io.vcix.req.fire &&(is_vsha2me)) -> sha_w.io.vd_out,
     (is_vsm3me && (count_sm === 1.U)) -> Cat(sm3_w.io.w_out(3),sm3_w.io.w_out(2),sm3_w.io.w_out(1),sm3_w.io.w_out(0)),
@@ -195,8 +206,8 @@ class Crypto extends Module {
     (io.vcix.req.fire &&(is_sha2)) -> sha2_sm3l_output,
     (is_vsm3c && (count_sm === 1.U)) -> sha2_sm3l_output,
     RegNext(is_vsm3c && (count_sm === 1.U)) -> vdSm3h,
-    (io.vcix.req.fire && is_vsm4k ) -> sm4_key.io.result_out,
-    (io.vcix.req.fire && is_vsm4r) -> sm4_ende.io.result_out,
+    (io.vcix.req.fire && is_vsm4k ) -> aes_sm4.io.result,
+    (io.vcix.req.fire && is_vsm4r) -> aes_sm4.io.result,
     is_vrev -> Cat(io.vcix.req.bits.data2(31,0),io.vcix.req.bits.data2(63,32),io.vcix.req.bits.data2(95,64),io.vcix.req.bits.data2(127,96))
   ))
 
@@ -204,8 +215,18 @@ class Crypto extends Module {
     io.vcix.response.valid := crypto_q.io.out.valid
     crypto_q.io.out.ready := io.vcix.response.ready
 }
+class Crypto_DC extends Module {
+  val io = IO(new Bundle {
+    val vcix = Flipped(new VcixIO)
+  })
+  val crypto = Module(new Crypto)
+  crypto.io.vcix.req.valid := RegNext(io.vcix.req.valid);
+  io.vcix.req.ready := crypto.io.vcix.req.ready 
+  crypto.io.vcix.req.bits <> RegNext(io.vcix.req.bits);
+  io.vcix.response <> crypto.io.vcix.response
+}
 
 object Main extends App {
   println("Generating the Sha_w hardware")
-  emitVerilog(new Crypto(), Array("--target-dir", "generated"))
+  emitVerilog(new Crypto_DC(), Array("--target-dir", "generated"))
 }
