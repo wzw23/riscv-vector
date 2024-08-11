@@ -3,8 +3,7 @@
 module aes_key_w(
                    input wire [127 : 0]  key,
                    input wire    [3 : 0] round,
-                   output wire [127 : 0] round_key,
-                  );
+                   output wire [127 : 0] round_key);
       //G function:sbox=>replace=>add
       wire [31 : 0] rconw, rotstw, tw, trw;
       wire [31:0] tmp_sboxw,new_sboxw;
@@ -35,9 +34,10 @@ module aes_key_w(
           4'd5: rcon_out = 8'h10;
           4'd6: rcon_out = 8'h20;
           4'd7: rcon_out = 8'h40;
-          4'd8: rcon_out = 8'h1B;
-          4'd9: rcon_out = 8'h36;
-        default: rcon_out = 32'b0;
+          4'd8: rcon_out = 8'h80;
+          4'd9: rcon_out = 8'h1B;
+          4'd10: rcon_out = 8'h36;
+        default: rcon_out = 8'b0;
        endcase
        end
 endmodule // aes_key_mem

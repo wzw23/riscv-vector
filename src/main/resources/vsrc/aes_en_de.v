@@ -6,8 +6,7 @@ module aes_en_de(
 
                           input wire [127 : 0]  block,
                           input wire [127 : 0]  round_key,
-                          output wire [127 : 0] new_block,
-                         );
+                          output wire [127 : 0] new_block );
   //----------------------------------------------------------------
   // Round functions with sub functions.
   //----------------------------------------------------------------
@@ -85,18 +84,18 @@ module aes_en_de(
 
   //----------------------------------------------------------------
   // Gaolis multiplication functions for Inverse MixColumn.
-  //----------------------------------------------------------------
-  function [7 : 0] gm2(input [7 : 0] op);
-    begin
-      gm2 = {op[6 : 0], 1'b0} ^ (8'h1b & {8{op[7]}});
-    end
-  endfunction // gm2
+  // //----------------------------------------------------------------
+  // function [7 : 0] gm2(input [7 : 0] op);
+  //   begin
+  //     gm2 = {op[6 : 0], 1'b0} ^ (8'h1b & {8{op[7]}});
+  //   end
+  // endfunction // gm2
 
-  function [7 : 0] gm3(input [7 : 0] op);
-    begin
-      gm3 = gm2(op) ^ op;
-    end
-  endfunction // gm3
+  // function [7 : 0] gm3(input [7 : 0] op);
+  //   begin
+  //     gm3 = gm2(op) ^ op;
+  //   end
+  // endfunction // gm3
 
   function [7 : 0] gm4(input [7 : 0] op);
     begin
@@ -197,16 +196,26 @@ module aes_en_de(
   wire [127:0] inv_sbox_out;
   wire [127:0] de_first_block;
   wire [127:0] de_main_block;
+  wire [127:0] old_block;
+  wire [127:0] addkey_final_block; 
+  wire [127:0] addkey_main_block; 
+  wire [127:0] shiftrows_block;
+  wire [127:0] mixcolumns_block;
+  wire [127:0] addkey_block;
+  wire [127:0] inv_shiftrows_block_first;
+  wire [127:0] inv_mixcolumns_block;
+  wire [127:0] inv_shiftrows_block;
 
-  aes_4sbox aes_4sbox_first (.sboxw(block[31:0]),. new_sboxw(block_w0));
-  aes_4sbox aes_4sbox_second(.sboxw(block[63:32]),.new_sboxw(block_w1));
-  aes_4sbox aes_4sbox_third (.sboxw(block[95:64]),.new_sboxw(block_w2));
-  aes_4sbox aes_4sbox_fourth(.sboxw(block[128:96]),new_sboxw(block_w3));
+  
+  aes_4sbox aes_4sbox_a(.sboxw(block[127:96]),.new_sboxw(block_w0));
+  aes_4sbox aes_4sbox_b(.sboxw(block[95:64]),.new_sboxw(block_w1));
+  aes_4sbox aes_4sbox_c(.sboxw(block[63:32]),.new_sboxw(block_w2));
+  aes_4sbox aes_4sbox_d(.sboxw(block[31:0]),.new_sboxw(block_w3));
 
-  aes_4inv_sbox aes_4inv_sbox_first (.sboxw(inv_sox_in[31:0]),  .new_sboxw(inv_sox_out[31:0]));
-  aes_4inv_sbox aes_4inv_sbox_second(.sboxw(inv_sox_in[63:32]), .new_sboxw(inv_sox_out[63:32]));
-  aes_4inv_sbox aes_4inv_sbox_third (.sboxw(inv_sox_in[95:64]), .new_sboxw(inv_sox_out[95:64]));
-  aes_4inv_sbox aes_4inv_sbox_fourth(.sboxw(inv_sox_in[128:96]),.new_sboxw(inv_sox_out[128:96]));
+  aes_4inv_sbox aes_4inv_sbox_first (.sboxw(inv_sbox_in[31:0]),  .new_sboxw(inv_sbox_out[31:0]));
+  aes_4inv_sbox aes_4inv_sbox_second(.sboxw(inv_sbox_in[63:32]), .new_sboxw(inv_sbox_out[63:32]));
+  aes_4inv_sbox aes_4inv_sbox_third (.sboxw(inv_sbox_in[95:64]), .new_sboxw(inv_sbox_out[95:64]));
+  aes_4inv_sbox aes_4inv_sbox_fourth(.sboxw(inv_sbox_in[127:96]),.new_sboxw(inv_sbox_out[127:96]));
 
 //en
   assign old_block          = {block_w0, block_w1, block_w2, block_w3};
@@ -215,15 +224,19 @@ module aes_en_de(
   assign addkey_main_block  = addroundkey(mixcolumns_block, round_key);
   assign addkey_final_block = addroundkey(shiftrows_block, round_key);
 //de
-  assign addkey_block         = addroundkey(old_block, round_key);
-  assign inv_shiftrows_block_first = inv_shiftrows(addkey_block);
+  // assign addkey_block         = addroundkey(old_block, round_key);
+  assign inv_shiftrows_block = inv_shiftrows(block);
+  assign inv_sbox_in =  inv_shiftrows_block;
+  // assign inv_mixcolumns_block = inv_mixcolumns(addkey_block);
+  assign addkey_block = addroundkey(inv_sbox_out, round_key);
   assign inv_mixcolumns_block = inv_mixcolumns(addkey_block);
-  assign inv_shiftrows_block_main  = inv_shiftrows(inv_mixcolumns_block);
+  // assign inv_shiftrows_block_main  = inv_shiftrows(inv_mixcolumns_block);
 
-  assign inv_sbox_in = (!en_de & last) ? inv_shiftrows_block_first : inv_shiftrows_block_main;
+  // assign inv_sbox_in = (!en_de & last) ? inv_shiftrows_block_first : inv_shiftrows_block_main;
   assign new_block = (en_de && last)? addkey_final_block:
-                     (en_de && !last)addkey_main_block:
-                     inv_sbox_out; 
+                     (en_de && !last)?addkey_main_block:
+                     (!en_de && !last)?inv_mixcolumns_block:
+                     addkey_block; 
 endmodule // aes_encipher_block
 
 //======================================================================

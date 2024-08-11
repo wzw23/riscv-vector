@@ -493,5 +493,6 @@ class VecDecode6 extends VecDecode {
     IN_VC_V_VVV       -> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
     IN_VC_IVV         -> BitPat("b1 011 10   00    10   0 0 0 0 0 0 0 0  00001"),
     IN_VC_VVV         -> BitPat("b1 111 10   00    10   0 0 0 0 0 0 0 0  00001"),
+    IN_VC_V_V         -> BitPat("b1 010 10   00    10   0 0 0 0 0 0 0 0  00001")
      )
 }
