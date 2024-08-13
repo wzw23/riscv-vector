@@ -1,5 +1,6 @@
 `timescale 1ns / 100ps
 module four_round_for_encdec(
+		clock,
 		data_in,
 		round_key_in,
 		result_out,
@@ -12,6 +13,7 @@ module four_round_for_encdec(
 		sbox_out4,
 		sbox_in4
 	);
+input clock;
 input	[127:0]		data_in;
 input	[127:0]		round_key_in;
 output	[127:0]		result_out;
@@ -23,6 +25,8 @@ output  [31:0]	    sbox_out3;
 input   [31:0] 	    sbox_in3;
 output  [31:0]	    sbox_out4;
 input   [31:0] 	    sbox_in4;
+reg 	[127:0]		result_out_second_r;
+reg     [63:0]		round_key_in_r; 
 
 wire	[127:0]		result_out_first;
 wire	[127:0]		result_out_second;
@@ -41,16 +45,20 @@ one_round_for_encdec second(
 		.sbox_out(sbox_out2),
 		.sbox_in(sbox_in2)
 );											
+always @(posedge clock) begin
+	result_out_second_r <= result_out_second;	
+	round_key_in_r <= round_key_in[63:0];
+end
 one_round_for_encdec third(
-		.data_in(result_out_second),
-		.round_key_in(round_key_in[63:32]),
+		.data_in(result_out_second_r),
+		.round_key_in(round_key_in_r[63:32]),
 		.result_out(result_out_third),
 		.sbox_out(sbox_out3),
 		.sbox_in(sbox_in3)
 );
 one_round_for_encdec fourth(
 		.data_in(result_out_third),
-		.round_key_in(round_key_in[31:0]),
+		.round_key_in(round_key_in_r[31:0]),
 		.result_out(result_out),
 		.sbox_out(sbox_out4),
 		.sbox_in(sbox_in4)

@@ -2,6 +2,7 @@
 
 module four_round_for_key_exp
 	(
+		clock,
 		count_round_in,
 		data_in,
 		result_out,
@@ -15,6 +16,7 @@ module four_round_for_key_exp
 		sbox_in4
 	);
 
+input clock;
 input 	[4   : 0] 	count_round_in;
 input	[127 : 0]	data_in;
 output	[127 : 0]	result_out;
@@ -29,7 +31,8 @@ input   [31:0] 	    sbox_in4;
 wire	[127:0]		result_out_first;
 wire	[127:0]		result_out_second;
 wire	[127:0]		result_out_third;
-
+reg 	[127:0]		result_out_second_r;
+reg     [4:0]		count_round_in_r; 
 one_round_for_key_exp first
 	(
 		.count_round_in(count_round_in),
@@ -47,11 +50,15 @@ one_round_for_key_exp second
 		.sbox_out(sbox_out2),
 		.sbox_in(sbox_in2)
 	);
+	always @(posedge clock) begin
+		result_out_second_r <= result_out_second;	
+		count_round_in_r <= count_round_in;
+	end
 
 one_round_for_key_exp third
 	(
-		.count_round_in((count_round_in+2'd2)),
-		.data_in(result_out_second),
+		.count_round_in((count_round_in_r+2'd2)),
+		.data_in(result_out_second_r),
 		.result_out(result_out_third),
 		.sbox_out(sbox_out3),
 		.sbox_in(sbox_in3)
@@ -59,7 +66,7 @@ one_round_for_key_exp third
 
 one_round_for_key_exp fourth
 	(
-		.count_round_in((count_round_in+2'd3)),
+		.count_round_in((count_round_in_r+2'd3)),
 		.data_in(result_out_third),
 		.result_out(result_out),
 		.sbox_out(sbox_out4),

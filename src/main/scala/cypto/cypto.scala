@@ -49,7 +49,9 @@ class Crypto extends Module {
   //256 -> 256 vsm3c vsm3me
   //vaesem vaesef vaesdf vaeskf1
   // val aes_en_de = Module(new Aes)
-  io.vcix.req.ready := true.B
+  //当为sm4时 且下一拍信号不是sm4时 下一拍ready信号拉低
+  val is_vsm4 = is_vsm4k || is_vsm4r
+  io.vcix.req.ready := ~(RegNext(io.vcix.req.fire && is_vsm4) &&(!( is_vsm4)))
   // aes_en_de.io.en_de := is_vaesem || is_vaesef
   // aes_en_de.io.last := is_vaesdf || is_vaesef
   // aes_en_de.io.block := io.vcix.req.bits.data1
@@ -184,6 +186,16 @@ class Crypto extends Module {
     io.out <> q.io.deq
     io.cnt <> q.io.count
   }
+   val vrev_result = MuxLookup(io.vcix.req.bits.vsew,0.U,Array(
+    (0.U)->Cat(io.vcix.req.bits.data2(7, 0), io.vcix.req.bits.data2(15, 8), io.vcix.req.bits.data2(23, 16), io.vcix.req.bits.data2(31, 24),
+                    io.vcix.req.bits.data2(39, 32), io.vcix.req.bits.data2(47, 40), io.vcix.req.bits.data2(55, 48), io.vcix.req.bits.data2(63, 56),
+                    io.vcix.req.bits.data2(71, 64), io.vcix.req.bits.data2(79, 72), io.vcix.req.bits.data2(87, 80), io.vcix.req.bits.data2(95, 88),
+                    io.vcix.req.bits.data2(103, 96), io.vcix.req.bits.data2(111, 104), io.vcix.req.bits.data2(119, 112), io.vcix.req.bits.data2(127, 120)),
+    (1.U)->Cat(io.vcix.req.bits.data2(15, 0), io.vcix.req.bits.data2(31, 16), io.vcix.req.bits.data2(47, 32), io.vcix.req.bits.data2(63, 48),
+                    io.vcix.req.bits.data2(79, 64), io.vcix.req.bits.data2(95, 80), io.vcix.req.bits.data2(111, 96), io.vcix.req.bits.data2(127, 112)),
+    (2.U)->Cat(io.vcix.req.bits.data2(31, 0), io.vcix.req.bits.data2(63, 32), io.vcix.req.bits.data2(95, 64), io.vcix.req.bits.data2(127, 96)),
+    (3.U)->Cat(io.vcix.req.bits.data2(63, 0), io.vcix.req.bits.data2(127, 64))
+    ))
    val crypto_q = Module(new CryptoQueue)
     crypto_q.io.in.valid := io.vcix.req.fire &&(is_vaesdf || is_vaesdm || is_vaesef || is_vaesem)||
     (io.vcix.req.fire &&(is_vaeskf1))||
@@ -193,9 +205,9 @@ class Crypto extends Module {
     (io.vcix.req.fire &&(is_sha2))||
     (is_vsm3c && (count_sm === 1.U))||
     RegNext(is_vsm3c && (count_sm === 1.U)) ||
-    (io.vcix.req.fire && is_vsm4k ) ||
-    (io.vcix.req.fire && is_vsm4r ) ||
-    is_vrev
+    RegNext(io.vcix.req.fire && is_vsm4k ) ||
+    RegNext(io.vcix.req.fire && is_vsm4r ) ||
+    (io.vcix.req.fire && is_vrev)
 
     crypto_q.io.in.bits.vd_data := Mux1H(Seq(
     (io.vcix.req.fire &&(is_vaesdf || is_vaesdm || is_vaesef || is_vaesem)) -> aes_sm4.io.result,
@@ -206,9 +218,9 @@ class Crypto extends Module {
     (io.vcix.req.fire &&(is_sha2)) -> sha2_sm3l_output,
     (is_vsm3c && (count_sm === 1.U)) -> sha2_sm3l_output,
     RegNext(is_vsm3c && (count_sm === 1.U)) -> vdSm3h,
-    (io.vcix.req.fire && is_vsm4k ) -> aes_sm4.io.result,
-    (io.vcix.req.fire && is_vsm4r) -> aes_sm4.io.result,
-    is_vrev -> Cat(io.vcix.req.bits.data2(31,0),io.vcix.req.bits.data2(63,32),io.vcix.req.bits.data2(95,64),io.vcix.req.bits.data2(127,96))
+    RegNext(io.vcix.req.fire && is_vsm4k ) -> aes_sm4.io.result,
+    RegNext(io.vcix.req.fire && is_vsm4r) -> aes_sm4.io.result,
+    (io.vcix.req.fire &&is_vrev) -> vrev_result
   ))
 
     io.vcix.response.bits.resp_bits_data := crypto_q.io.out.bits.vd_data
