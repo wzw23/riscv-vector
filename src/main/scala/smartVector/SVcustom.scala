@@ -24,6 +24,7 @@ class SVcustomIO(implicit p: Parameters) extends ParameterizedBundle()(p) {
    val customout       = Output(ValidIO(new CustomOutput))
    val vcix            = new(VcixIO)
    val customReady     = Output(Bool())
+   val bypassInfo_idx  = (new BypassInfo_idx)
 }
 class SVcustom(implicit p: Parameters) extends Module {
     val io = IO(new SVcustomIO);
@@ -79,4 +80,6 @@ class SVcustom(implicit p: Parameters) extends Module {
     io.customout.bits.rfWriteEn := ~q.io.deq.bits.vm
     io.customout.bits.data := io.vcix.response.bits.resp_bits_data
     io.customout.bits.rfWriteIdx := q.io.deq.bits.rfWriteIdx
+
+    io.bypassInfo_idx.rfWriteIdx := q.io.enq.bits.rfWriteIdx
 }

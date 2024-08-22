@@ -129,6 +129,7 @@ class Vsplit(implicit p : Parameters) extends Module {
         val iexNeedStall  = Input(Bool())
         val vLSUXcpt = Input (new VLSUXcpt)
         val excpInfo = Output(new ExcpInfo)
+        val bypassInfo = Input(new BypassInfo)
     })
 
     val expdWidth     = 8 // 1~128
@@ -189,10 +190,14 @@ class Vsplit(implicit p : Parameters) extends Module {
     val eewEmulInfo1 = io.in.decodeIn.bits.eewEmulInfo  
 
     //Because the register file do not always read the register file when instFirstIn
-    val vs1     = Mux(io.in.regFileIn.readVld(0), io.in.regFileIn.readData(0), uopRegInfo(0).vs1)
-    val vs2     = Mux(io.in.regFileIn.readVld(1), io.in.regFileIn.readData(1), uopRegInfo(0).vs2)
-    val mask    = Mux(io.in.regFileIn.readVld(2), io.in.regFileIn.readData(2), uopRegInfo(0).mask)
-    val old_vd  = Mux(io.in.regFileIn.readVld(3), io.in.regFileIn.readData(3), uopRegInfo(0).old_vd)
+    val custom_can_bypass0 = (ctrl.lsrcVal(0)) && (io.bypassInfo.bypassInfo_en_data.rfWriteEn) &&(io.bypassInfo.bypassInfo_idx.rfWriteIdx === io.out.toRegFileRead.rfReadIdx(0))
+    val custom_can_bypass1 = (ctrl.lsrcVal(1)) && (io.bypassInfo.bypassInfo_en_data.rfWriteEn) &&(io.bypassInfo.bypassInfo_idx.rfWriteIdx === io.out.toRegFileRead.rfReadIdx(1))
+    val custom_can_bypass2 = (~ctrl.vm) && (io.bypassInfo.bypassInfo_en_data.rfWriteEn) &&(io.bypassInfo.bypassInfo_idx.rfWriteIdx === io.out.toRegFileRead.rfReadIdx(2))
+    val custom_can_bypass3 = ((ctrl.ldestVal || ctrl.store)) && (io.bypassInfo.bypassInfo_en_data.rfWriteEn) &&(io.bypassInfo.bypassInfo_idx.rfWriteIdx === io.out.toRegFileRead.rfReadIdx(3))
+    val vs1     = Mux(custom_can_bypass0,io.bypassInfo.bypassInfo_en_data.rfWriteData,Mux(io.in.regFileIn.readVld(0), io.in.regFileIn.readData(0), uopRegInfo(0).vs1))
+    val vs2     = Mux(custom_can_bypass1,io.bypassInfo.bypassInfo_en_data.rfWriteData,Mux(io.in.regFileIn.readVld(1), io.in.regFileIn.readData(1), uopRegInfo(0).vs2))
+    val mask    = Mux(custom_can_bypass2,io.bypassInfo.bypassInfo_en_data.rfWriteData,Mux(io.in.regFileIn.readVld(2), io.in.regFileIn.readData(2), uopRegInfo(0).mask))
+    val old_vd  = Mux(custom_can_bypass3,io.bypassInfo.bypassInfo_en_data.rfWriteData,Mux(io.in.regFileIn.readVld(3), io.in.regFileIn.readData(3), uopRegInfo(0).old_vd))
     val v_ext_out = ctrl.alu && ctrl.funct3 === "b010".U && ctrl.funct6 === "b010010".U 
   
     val isfloat = !ctrl.isLdst && (ctrl.funct3 === "b101".U || ctrl.funct3 === "b001".U)
@@ -396,6 +401,8 @@ class Vsplit(implicit p : Parameters) extends Module {
         hasRegConf(0) := io.scoreBoardReadIO.readBypassed1N
     }.elsewhen (~io.scoreBoardReadIO.readBypassed1){
         hasRegConf(0) := false.B
+    }.elsewhen(custom_can_bypass0){
+        hasRegConf(0) := false.B
     }.otherwise{
         hasRegConf(0) := true.B
     }
@@ -405,6 +412,8 @@ class Vsplit(implicit p : Parameters) extends Module {
     }.elsewhen(ctrl.perm){
         hasRegConf(1) := io.scoreBoardReadIO.readBypassed2N
     }.elsewhen (~io.scoreBoardReadIO.readBypassed2){
+        hasRegConf(1) := false.B
+    }.elsewhen(custom_can_bypass1){
         hasRegConf(1) := false.B
     }.otherwise{
         hasRegConf(1) := true.B
@@ -416,6 +425,8 @@ class Vsplit(implicit p : Parameters) extends Module {
         hasRegConf(2) := io.scoreBoardReadIO.readBypassed3N
     }.elsewhen (~io.scoreBoardReadIO.readBypassed3){
         hasRegConf(2) := false.B
+    }.elsewhen(custom_can_bypass3){
+        hasRegConf(2) := false.B
     }.otherwise{
         hasRegConf(2) := true.B
     }
@@ -423,6 +434,8 @@ class Vsplit(implicit p : Parameters) extends Module {
     when(!maskReadEn){
         hasRegConf(3) := false.B
     }.elsewhen (~io.scoreBoardReadIO.readBypassed4){
+        hasRegConf(3) := false.B
+    }.elsewhen(custom_can_bypass2){
         hasRegConf(3) := false.B
     }.otherwise{
         hasRegConf(3) := true.B

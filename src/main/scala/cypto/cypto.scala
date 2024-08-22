@@ -6,10 +6,12 @@ import utils._
 import darecreek._
 import chisel3._
 import darecreek.exu.vfucore.div._
+import smartVector.BypassInfo_en_data
 
 class Crypto extends Module {
   val io = IO(new Bundle {
     val vcix = Flipped(new VcixIO)
+    val bypassInfo_en_data = (new BypassInfo_en_data)
   })
   val is_vaesem = (io.vcix.req.bits.funct7(6,1) === "b001000".U && io.vcix.req.bits.funct3 === "b000".U)
   val is_vaesef = (io.vcix.req.bits.funct7(6,1) === "b001001".U && io.vcix.req.bits.funct3 === "b000".U)
@@ -181,7 +183,7 @@ class Crypto extends Module {
       val out = Decoupled(new CryptoMessage )
       val cnt = Output(UInt(4.W))
     })
-    val q = Module(new Queue(new CryptoMessage ,entries = 12))
+    val q = Module(new Queue(new CryptoMessage ,entries = 2))
     q.io.enq <> io.in
     io.out <> q.io.deq
     io.cnt <> q.io.count
@@ -226,6 +228,8 @@ class Crypto extends Module {
     io.vcix.response.bits.resp_bits_data := crypto_q.io.out.bits.vd_data
     io.vcix.response.valid := crypto_q.io.out.valid
     crypto_q.io.out.ready := io.vcix.response.ready
+    io.bypassInfo_en_data.rfWriteEn := crypto_q.io.in.valid
+    io.bypassInfo_en_data.rfWriteData := crypto_q.io.in.bits.vd_data
 }
 class Crypto_DC extends Module {
   val io = IO(new Bundle {
@@ -240,5 +244,5 @@ class Crypto_DC extends Module {
 
 object Main extends App {
   println("Generating the Sha_w hardware")
-  emitVerilog(new Crypto_DC(), Array("--target-dir", "generated"))
+  emitVerilog(new Crypto(), Array("--target-dir", "generated"))
 }

@@ -57,6 +57,20 @@ class CommitInfo extends Bundle{
     val vxsat = Bool()
 }
 
+class BypassInfo_en_data extends Bundle{
+    val rfWriteEn = Bool()
+    val rfWriteData = UInt(128.W)
+}
+
+class BypassInfo_idx extends Bundle{
+    val rfWriteIdx = UInt(5.W)
+}
+
+class BypassInfo extends Bundle{
+    val bypassInfo_en_data = new BypassInfo_en_data;
+    val bypassInfo_idx = new BypassInfo_idx;
+}
+
 class SmartVector extends Module {
     val io = IO(new Bundle{
         val in = Flipped(Decoupled(new RVUissue))
@@ -70,6 +84,7 @@ class SmartVector extends Module {
         val rfData = Output(Vec(NVPhyRegs, UInt(VLEN.W)))
         //wzw: add interface
         val vcix = new(VcixIO)
+        val bypassInfo_en_data = Input(new BypassInfo_en_data)
     })
 
 
@@ -173,6 +188,9 @@ class SmartVector extends Module {
     split.io.scoreBoardReadIO.readBypassed2N := sboard.readBypassedN(split.io.scoreBoardReadIO.readNum2, split.io.scoreBoardReadIO.readAddr2)
     split.io.scoreBoardReadIO.readBypassed3N := sboard.readBypassedN(1.U, split.io.scoreBoardReadIO.readAddr3)
     io.in.ready := decoder.io.in.ready
+
+    split.io.bypassInfo.bypassInfo_en_data := io.bypassInfo_en_data
+    split.io.bypassInfo.bypassInfo_idx := svcustom.io.bypassInfo_idx
 }
 
 object Main extends App {
